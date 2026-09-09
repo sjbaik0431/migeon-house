@@ -1,0 +1,826 @@
+<title>미건 임대 주택 현황</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#f6f2e8; --paper-raised:#ffffff; --ink:#1c2231; --ink-soft:#6a6252;
+  --line:#e6ddc9; --line-soft:#efe8d8;
+  --gold-500:#a9812f; --gold-600:#8f6c26; --gold-050:#f2e6c8;
+  --ok:#2f7a4f; --ok-bg:#e4f2e8; --danger:#b23a2e; --danger-bg:#fbeae6; --warn:#a86a12; --warn-bg:#f8ecd4;
+  --shadow:0 14px 34px -16px rgba(28,20,10,.28);
+  --radius:14px;
+  --sidebar-bg:#0d1a2b; --sidebar-bg-2:#122238; --sidebar-line:#22385a;
+  --sidebar-text:#cdd7e6; --sidebar-text-dim:#8496b0; --sidebar-gold:#d7b563; --sidebar-active:#17304f;
+  --font-display:'Fraunces',Georgia,serif; --font-body:'Work Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11151f; --paper-raised:#181d2a; --ink:#eae7dd;
+    --ink-soft:#9aa0b2; --line:#2a3142; --line-soft:#232a3a;
+    --gold-500:#d7b563; --gold-600:#e6c886; --gold-050:#2a2416;
+    --ok:#7fd39c; --ok-bg:#173425; --danger:#ff9186; --danger-bg:#3a1a17; --warn:#e8b158; --warn-bg:#332708;
+    --shadow:0 14px 34px -16px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11151f; --paper-raised:#181d2a; --ink:#eae7dd; --ink-soft:#9aa0b2; --line:#2a3142; --line-soft:#232a3a;
+  --gold-500:#d7b563; --gold-600:#e6c886; --gold-050:#2a2416;
+  --ok:#7fd39c; --ok-bg:#173425; --danger:#ff9186; --danger-bg:#3a1a17; --warn:#e8b158; --warn-bg:#332708;
+  --shadow:0 14px 34px -16px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.5}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0}
+.num{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+::selection{background:var(--gold-050)}
+.app{display:grid;grid-template-columns:252px 1fr;min-height:100vh}
+/* ---- sidebar ---- */
+.sidebar{background:linear-gradient(180deg,var(--sidebar-bg),var(--sidebar-bg-2));color:var(--sidebar-text);display:flex;flex-direction:column;padding:22px 14px;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--sidebar-gold),#8a6a2e);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#241a08;flex:none}
+.brand-name{font-family:var(--font-display);font-weight:700;font-size:19px;color:#f4ecd8;letter-spacing:.2px}
+.brand-sub{font-size:11.5px;color:var(--sidebar-text-dim);letter-spacing:.4px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--sidebar-text);text-align:left;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;transition:background .15s,color .15s}
+.nav-item .ic{width:18px;text-align:center;opacity:.85;font-size:14px}
+.nav-item:hover{background:rgba(255,255,255,.06)}
+.nav-item.active{background:var(--sidebar-active);color:#fbf3de;box-shadow:inset 2px 0 0 var(--sidebar-gold)}
+.sidebar-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--sidebar-line)}
+.ghost-btn{background:rgba(255,255,255,.06);border:1px solid var(--sidebar-line);color:var(--sidebar-text);padding:9px 12px;border-radius:9px;font-size:12.5px;font-weight:500;text-align:left}
+.ghost-btn:hover{background:rgba(255,255,255,.12)}
+.sidebar-meta{font-size:11px;color:var(--sidebar-text-dim);padding:0 2px}
+/* ---- main ---- */
+.main{min-width:0}
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:14px 26px;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.icon-btn{display:none;background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;color:var(--ink)}
+.search-wrap{position:relative;flex:1;max-width:460px}
+.search-wrap input{width:100%;padding:9px 14px 9px 34px;border-radius:10px;border:1px solid var(--line);background:var(--paper-raised);color:var(--ink);font-size:13.5px}
+.search-wrap input:focus{outline:2px solid var(--gold-500);outline-offset:1px}
+.search-wrap::before{content:"⌕";position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:15px}
+.search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);max-height:260px;overflow:auto;z-index:20}
+.search-results div{padding:9px 14px;font-size:13px;border-bottom:1px solid var(--line-soft)}
+.search-results div:hover{background:var(--gold-050);cursor:pointer}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{font-size:11.5px;padding:5px 11px;border-radius:99px;background:var(--gold-050);color:var(--gold-600);font-weight:600;letter-spacing:.2px}
+.view-root{padding:24px 26px 60px}
+.view-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.view-head h2{font-size:23px;font-weight:600}
+.view-head .sub{color:var(--ink-soft);font-size:12.5px}
+/* ---- cards / kpi ---- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:14px;margin-bottom:22px}
+.kpi{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:transform .15s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi .lbl{font-size:11.5px;color:var(--ink-soft);font-weight:600;letter-spacing:.3px}
+.kpi .val{font-family:var(--font-display);font-size:28px;font-weight:600}
+.kpi .val small{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--ink-soft)}
+.kpi .delta{font-size:11.5px}
+.kpi.warn .val{color:var(--warn)} .kpi.danger .val{color:var(--danger)} .kpi.ok .val{color:var(--ok)}
+.gauge{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--font-display);flex:none}
+.panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.panel h3{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+@media(max-width:980px){.two-col{grid-template-columns:1fr}}
+/* ---- table ---- */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-soft);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+tr:hover td{background:var(--gold-050)}
+.rowlink{cursor:pointer}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600}
+.badge.ok{background:var(--ok-bg);color:var(--ok)} .badge.danger{background:var(--danger-bg);color:var(--danger)}
+.badge.warn{background:var(--warn-bg);color:var(--warn)} .badge.muted{background:var(--line-soft);color:var(--ink-soft)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:7px 13px;border-radius:99px;border:1px solid var(--line);background:var(--paper-raised);font-size:12.5px;font-weight:500;color:var(--ink)}
+.chip.active{background:var(--sidebar-bg);color:#f4ecd8;border-color:var(--sidebar-bg)}
+.btn{padding:7px 13px;border-radius:8px;border:1px solid var(--line);background:var(--paper-raised);font-size:12.5px;font-weight:600;color:var(--ink)}
+.btn.gold{background:var(--gold-500);border-color:var(--gold-500);color:#fff}
+.btn.gold:hover{background:var(--gold-600)}
+.btn.small{padding:5px 10px;font-size:11.5px}
+.btn:disabled{opacity:.5;cursor:default}
+/* ---- heatmap ---- */
+.heat-grid{display:grid;font-size:12px}
+.heat-row{display:contents}
+.heat-cell{padding:8px 4px;text-align:center;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft)}
+.heat-head{position:sticky;top:0;background:var(--paper-raised);font-weight:600;color:var(--ink-soft);font-size:11px;z-index:2}
+.heat-unit{position:sticky;left:0;background:var(--paper-raised);text-align:left;font-weight:600;z-index:1;padding-left:10px}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+/* ---- kanban ---- */
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.kanban{grid-template-columns:1fr}}
+.kcol{background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:12px;min-height:120px}
+.kcol h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink-soft);margin:0 0 10px;display:flex;justify-content:space-between}
+.kcard{background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:9px;box-shadow:var(--shadow)}
+.kcard .u{font-weight:700;font-size:13px} .kcard .d{color:var(--ink-soft);font-size:12px;margin:3px 0 8px}
+/* ---- overlay ---- */
+.overlay{position:fixed;inset:0;background:rgba(10,14,24,.5);display:flex;justify-content:flex-end;z-index:50}
+.overlay[hidden]{display:none}
+.overlay .sheet{background:var(--paper);width:min(560px,94vw);height:100%;overflow-y:auto;padding:26px 24px;box-shadow:-18px 0 40px -20px rgba(0,0,0,.4)}
+.overlay.center{align-items:center;justify-content:center}
+.overlay.center .sheet{width:min(640px,94vw);height:auto;max-height:88vh;border-radius:16px}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.close-x{background:none;border:none;font-size:20px;color:var(--ink-soft);line-height:1}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:14px 0}
+.field-grid .f{display:flex;flex-direction:column;gap:2px}
+.field-grid .f .k{font-size:11px;color:var(--ink-soft)} .field-grid .f .v{font-weight:600;font-size:13.5px}
+.timeline{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.tl-cell{width:26px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#fff;font-weight:700}
+textarea.jsonview{width:100%;height:180px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--paper-raised);color:var(--ink)}
+.hint{font-size:12px;color:var(--ink-soft);line-height:1.6}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--sidebar-bg);color:#f4ecd8;padding:11px 20px;border-radius:99px;font-size:13px;box-shadow:var(--shadow);z-index:99;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+@media(max-width:880px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:250px;transform:translateX(-104%);transition:transform .2s;z-index:40}
+  .sidebar.open{transform:translateX(0)}
+  .icon-btn{display:inline-flex;align-items:center;justify-content:center}
+  .field-grid{grid-template-columns:1fr}
+}
+</style>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">美</div><div><div class="brand-name">미건</div><div class="brand-sub">임대 주택 현황</div></div></div>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-view="home"><span class="ic">◆</span>홈</button>
+      <button class="nav-item" data-view="units"><span class="ic">▤</span>임대·임차인 현황</button>
+      <button class="nav-item" data-view="movein"><span class="ic">◷</span>최초 입주일</button>
+      <button class="nav-item" data-view="contracts"><span class="ic">▣</span>계약서 관리</button>
+      <button class="nav-item" data-view="payments"><span class="ic">▦</span>월별 납부 현황</button>
+      <button class="nav-item" data-view="repairs"><span class="ic">✎</span>수리 현황</button>
+      <button class="nav-item" data-view="contacts"><span class="ic">☎</span>임차인 연락처</button>
+      <button class="nav-item" data-view="overdue"><span class="ic">!</span>임대료 미납 현황</button>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="ghost-btn" id="dataBtn">⚙ 데이터 관리 (실데이터 불러오기)</button>
+      <div class="sidebar-meta" id="asOfLabel"></div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="menuToggle">≡</button>
+      <div class="search-wrap">
+        <input id="searchInput" placeholder="호실 번호 또는 임차인 이름 검색 (예: 301, 김민준)" autocomplete="off">
+        <div class="search-results" id="searchResults" hidden></div>
+      </div>
+      <div class="topbar-right"><span class="pill" id="dataModePill">가상 데이터</span></div>
+    </header>
+    <main class="view-root" id="viewRoot"></main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var ASOF = "2026-09-09";
+var STORE_KEY = "migeon_house_data_v1";
+
+/* ---------- seeded RNG ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+var rng = mulberry32(20260909);
+function pick(arr){return arr[Math.floor(rng()*arr.length)]}
+function randInt(min,max){return Math.floor(rng()*(max-min+1))+min}
+function pad(n){return String(n).padStart(2,"0")}
+function fmtDate(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function addMonths(dateStr,n){var d=new Date(dateStr+"T00:00:00");d.setMonth(d.getMonth()+n);return d}
+function addDays(dateStr,n){var d=new Date(dateStr+"T00:00:00");d.setDate(d.getDate()+n);return d}
+function dayDiff(a,b){return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/86400000)}
+function won(n){return (n||0).toLocaleString("ko-KR")+"원"}
+function buildMonthsList(asOf){var m=[]; for(var i=11;i>=0;i--) m.push(fmtDate(addMonths(asOf,-i)).slice(0,7)); return m}
+function todayStr(){return fmtDate(new Date())}
+
+/* ---------- CSV import (엑셀에서 저장한 CSV 파일 지원) ---------- */
+var CSV_HEADER_MAP={
+  "호실":"id","호수":"id","room":"id",
+  "동":"building","건물":"building",
+  "상태":"status",
+  "임차인":"tenant","이름":"tenant","성명":"tenant",
+  "전화":"phone","연락처":"phone","전화번호":"phone","휴대폰":"phone",
+  "비상연락":"emergency","비상연락처":"emergency",
+  "입금자명":"depositorAlias",
+  "보증금":"deposit",
+  "월세":"rent","임대료":"rent",
+  "관리비":"maintenanceFee",
+  "납부일":"dueDay",
+  "최초입주일":"moveInDate","입주일":"moveInDate",
+  "계약시작":"contractStart","계약시작일":"contractStart",
+  "계약종료":"contractEnd","계약종료일":"contractEnd","만기일":"contractEnd",
+  "확정일자":"confirmedDate",
+  "전월세신고":"reportStatus","전월세신고여부":"reportStatus"
+};
+function parseCSV(text){
+  text=text.replace(/^﻿/,"");
+  var rows=[],row=[],field="",inQ=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; }
+      else field+=c;
+    } else {
+      if(c==='"') inQ=true;
+      else if(c===","){row.push(field);field="";}
+      else if(c==="\n"){row.push(field);rows.push(row);row=[];field="";}
+      else if(c==="\r"){ /* ignore */ }
+      else field+=c;
+    }
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows.filter(function(r){return !(r.length===1 && r[0].trim()==="")});
+}
+function normDate(s){
+  s=(s||"").toString().trim(); if(!s) return null;
+  s=s.replace(/[./]/g,"-");
+  var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  return m ? (m[1]+"-"+pad(parseInt(m[2],10))+"-"+pad(parseInt(m[3],10))) : null;
+}
+function normNum(s){ var n=parseFloat(String(s==null?"":s).replace(/[^0-9.\-]/g,"")); return isNaN(n)?0:Math.round(n); }
+function normStatus(s){ s=(s||"").trim(); if(/공실|비어/.test(s)) return "공실"; if(/퇴거|이사예정/.test(s)) return "퇴거예정"; return "입주"; }
+function normReport(s){ return /완료|^O$|^Y$|예/i.test((s||"").trim()) ? "신고완료" : "미신고"; }
+function buildUnitsFromCSV(text){
+  var rows=parseCSV(text);
+  if(rows.length<2) throw new Error("데이터 행이 없습니다");
+  var header=rows[0].map(function(h){return h.replace(/﻿/g,"").trim()});
+  var keys=header.map(function(h){return CSV_HEADER_MAP[h]||CSV_HEADER_MAP[h.toLowerCase()]||null});
+  if(keys.indexOf("id")<0) throw new Error("'호실'(또는 '호수') 열을 찾을 수 없습니다. 발견된 헤더: "+header.join(", "));
+  var asOf=todayStr(), months=buildMonthsList(asOf), units=[];
+  for(var r=1;r<rows.length;r++){
+    var row=rows[r]; if(row.length===1 && !row[0]) continue;
+    var rec={}; keys.forEach(function(k,i){ if(k) rec[k]=row[i]; });
+    if(!rec.id || !String(rec.id).trim()) continue;
+    var id=String(rec.id).trim().replace(/[^0-9A-Za-z가-힣]/g,"");
+    var status=normStatus(rec.status);
+    var moveIn = status==="공실" ? null : normDate(rec.moveInDate);
+    var payments={};
+    months.forEach(function(m){
+      if(status==="공실"){payments[m]="해당없음";return}
+      if(moveIn && new Date(m+"-01")<new Date(moveIn.slice(0,7)+"-01")){payments[m]="해당없음";return}
+      payments[m]="미기록";
+    });
+    var unit={
+      id:id, building:(rec.building||"A동").trim()||"A동", floor:parseInt(id,10)||0,
+      tenant: status==="공실"?"-":((rec.tenant||"").trim()||"미입력"),
+      phone: status==="공실"?"-":((rec.phone||"").trim()||"-"),
+      emergency: status==="공실"?"-":((rec.emergency||"").trim()||"-"),
+      depositorAlias: status==="공실"?"-":((rec.depositorAlias||rec.tenant||"").trim()||"-"),
+      deposit:normNum(rec.deposit), rent:normNum(rec.rent), maintenanceFee:normNum(rec.maintenanceFee),
+      dueDay: parseInt(rec.dueDay,10)||25, status:status,
+      moveInDate: moveIn, renewals:0,
+      contractStart: status==="공실"?null:normDate(rec.contractStart),
+      contractEnd: status==="공실"?null:normDate(rec.contractEnd),
+      confirmedDate: status==="공실"?null:normDate(rec.confirmedDate),
+      reportStatus: status==="공실"?"-":normReport(rec.reportStatus),
+      payments:payments, months:months
+    };
+    recomputeArrears(unit);
+    units.push(unit);
+  }
+  if(units.length===0) throw new Error("인식된 세대가 없습니다. 헤더를 템플릿과 맞춰주세요.");
+  return {asOf:asOf, units:units, repairs:[], pending:[], noticeLog:[], isSample:false};
+}
+
+var SURNAMES=["김","이","박","최","정","강","조","윤","장","임","오","한","서","신","권"];
+var GIVEN=["민준","서연","지훈","수빈","예은","도윤","하은","지우","서준","윤아","현우","지민","민서","준서","수아","동현","가영","성민","은지","태윤","혜진","재원","소율","경수","나영"];
+var VENDORS=["미건설비","한빛전기","우리보일러","동네철물","청솔인테리어","24시긴급출동"];
+var REPAIR_TYPES=["보일러 작동 불량","화장실 누수","방충망 파손","현관문 도어락 고장","싱크대 배수 막힘","베란다 결로","콘센트 스파크","도배 얼룩 보수","엘리베이터 소음 민원","창틀 실리콘 시공"];
+
+function genUnits(){
+  var months=buildMonthsList(ASOF);
+  var units=[];
+  ["A동","B동"].forEach(function(b){
+    [3,4,5,6,7].forEach(function(fl){
+      for(var u=1;u<=5;u++){
+        var id=fl+""+u;
+        var name=pick(SURNAMES)+pick(GIVEN);
+        var deposit=randInt(20,50)*1000000;
+        var rent=randInt(40,80)*10000;
+        var mfee=randInt(6,12)*10000;
+        var dueDay=rng()<0.82?25:pick([1,10,15]);
+        var statusRoll=rng();
+        var status= statusRoll<0.06?"공실":(statusRoll<0.12?"퇴거예정":"입주");
+        var moveIn=fmtDate(addDays(ASOF,-randInt(120,2200)));
+        var renewals=Math.max(0,Math.floor(dayDiff(moveIn,ASOF)/730)-1+((rng()<0.5)?0:1));
+        var cStart=fmtDate(addMonths(ASOF,-randInt(2,20)));
+        var cEnd=fmtDate(addMonths(cStart,24));
+        var confirmed=fmtDate(addDays(cStart,1));
+        var reportStatus= rng()<0.85?"신고완료":"미신고";
+        var payments={};
+        var troubleUnit = status==="입주" && rng()<0.22;
+        months.forEach(function(m,idx){
+          if(status==="공실"){payments[m]="해당없음";return}
+          if(new Date(m+"-01")<new Date(moveIn.slice(0,7)+"-01")){payments[m]="해당없음";return}
+          var isCurrent = idx===months.length-1;
+          if(isCurrent){
+            var passed = dueDay <= new Date(ASOF).getDate();
+            if(!passed){payments[m]="예정";return}
+            payments[m]= troubleUnit ? (rng()<0.7?"미납":"부분") : (rng()<0.05?"부분":"완납");
+            return;
+          }
+          if(troubleUnit && rng()<0.35){payments[m]=rng()<0.6?"미납":"부분"}
+          else{payments[m]="완납"}
+        });
+        var unit={
+          id:id, building:b, floor:fl, tenant: status==="공실"?"-":name,
+          phone: status==="공실"?"-":"010-"+randInt(1000,9999)+"-"+randInt(1000,9999),
+          emergency: status==="공실"?"-":"010-"+randInt(1000,9999)+"-"+randInt(1000,9999),
+          depositorAlias: status==="공실"?"-":name,
+          deposit:deposit, rent:rent, maintenanceFee:mfee, dueDay:dueDay, status:status,
+          moveInDate: status==="공실"?null:moveIn, renewals: status==="공실"?0:Math.max(0,renewals),
+          contractStart: status==="공실"?null:cStart, contractEnd: status==="공실"?null:cEnd,
+          confirmedDate: status==="공실"?null:confirmed, reportStatus: status==="공실"?"-":reportStatus,
+          payments:payments, months:months
+        };
+        recomputeArrears(unit);
+        units.push(unit);
+      }
+    });
+  });
+  return units;
+}
+
+function genRepairs(units){
+  var occ=units.filter(function(u){return u.status!=="공실"});
+  var list=[]; var statuses=["접수","진행","완료"];
+  for(var i=0;i<16;i++){
+    var u=pick(occ);
+    var date=fmtDate(addDays(ASOF,-randInt(0,40)));
+    var status = i<4?"접수":(i<9?"진행":"완료");
+    list.push({id:"R"+(1000+i), unit:u.id, building:u.building, tenant:u.tenant, date:date,
+      content:pick(REPAIR_TYPES), status:status, cost:randInt(3,45)*10000, vendor:pick(VENDORS)});
+  }
+  return list.sort(function(a,b){return a.date<b.date?1:-1});
+}
+
+function genPending(units){
+  var occ=units.filter(function(u){return u.status==="입주"});
+  var out=[];
+  for(var i=0;i<3;i++){
+    var u=pick(occ);
+    out.push({id:"P"+i, amount:(u.rent+u.maintenanceFee), rawName:pick(SURNAMES)+pick(GIVEN), date:fmtDate(addDays(ASOF,-randInt(0,3))), note:"입금자명 불일치 — 세대 확인 필요"});
+  }
+  return out;
+}
+
+function genNoticeLog(units){
+  var log=[]; var overdue=units.filter(function(u){return u.arrears.months>0});
+  overdue.forEach(function(u){
+    log.push({date:fmtDate(addDays(ASOF,-1)), unit:u.id, tenant:u.tenant, type:"미납 안내(D+1)", channel:"SMS"});
+  });
+  return log.sort(function(a,b){return a.date<b.date?1:-1});
+}
+
+function freshSample(){
+  var units=genUnits();
+  return {asOf:ASOF, units:units, repairs:genRepairs(units), pending:genPending(units), noticeLog:genNoticeLog(units), isSample:true};
+}
+
+var STATE = loadState();
+function loadState(){
+  try{
+    var raw=localStorage.getItem(STORE_KEY);
+    if(raw){var parsed=JSON.parse(raw); if(parsed && Array.isArray(parsed.units)) return parsed;}
+  }catch(e){}
+  var s=freshSample(); saveState(s); return s;
+}
+function saveState(s){ try{localStorage.setItem(STORE_KEY, JSON.stringify(s))}catch(e){} }
+
+/* ---------- derived / KPI ---------- */
+function computeKPI(){
+  var occ=STATE.units.filter(function(u){return u.status!=="공실"});
+  var curMonth=STATE.units[0]?STATE.units[0].months[STATE.units[0].months.length-1]:null;
+  var paidCur=occ.filter(function(u){return curMonth && u.payments[curMonth]==="완납"}).length;
+  var dueOcc=occ.filter(function(u){return curMonth && ["완납","미납","부분"].indexOf(u.payments[curMonth])>=0}).length;
+  var rate= dueOcc? Math.round(paidCur/dueOcc*100) : null;
+  var overdue=STATE.units.filter(function(u){return u.arrears.months>0});
+  var overdueAmt=overdue.reduce(function(a,u){return a+u.arrears.amount},0);
+  var vacant=STATE.units.filter(function(u){return u.status==="공실"}).length;
+  var today=new Date(STATE.asOf).getDate();
+  var dueToday=occ.filter(function(u){return u.dueDay===today && u.arrears.months===0}).length;
+  var curYM=STATE.asOf.slice(0,7);
+  var expiring=STATE.units.filter(function(u){return u.contractEnd && u.contractEnd.slice(0,7)===curYM}).length;
+  return {rate:rate, overdueCount:overdue.length, overdueAmt:overdueAmt, vacancyRate:Math.round(vacant/STATE.units.length*100),
+    dueToday:dueToday, expiring:expiring, pending:STATE.pending.length, curMonth:curMonth};
+}
+function statusBadge(st){
+  var map={"완납":"ok","입주":"ok","미납":"danger","공실":"muted","부분":"warn","예정":"muted","퇴거예정":"warn","해당없음":"muted"};
+  return '<span class="badge '+(map[st]||"muted")+'">'+st+'</span>';
+}
+function findUnit(id){return STATE.units.find(function(u){return u.id===id})}
+function recomputeArrears(u){
+  var arrMonths=0, arrAmount=0, firstUnpaidMonth=null;
+  for(var k=u.months.length-1;k>=0;k--){
+    var st=u.payments[u.months[k]];
+    if(st==="미납"||st==="부분"){
+      arrMonths++; arrAmount += (st==="미납")?(u.rent+u.maintenanceFee):Math.round((u.rent+u.maintenanceFee)*0.4);
+      firstUnpaidMonth=u.months[k];
+    } else break;
+  }
+  var overdueDays = firstUnpaidMonth ? Math.max(0,dayDiff(firstUnpaidMonth+"-"+pad(u.dueDay),STATE?STATE.asOf:ASOF)) : 0;
+  u.arrears={months:arrMonths, amount:arrAmount, overdueDays:overdueDays};
+}
+
+/* ---------- views ---------- */
+var VIEWS={};
+function root(){return document.getElementById("viewRoot")}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+
+VIEWS.home=function(){
+  var k=computeKPI();
+  var top=STATE.units.filter(function(u){return u.arrears.months>0}).sort(function(a,b){return b.arrears.amount-a.arrears.amount}).slice(0,6);
+  var html='<div class="view-head"><div><h2>현황판</h2><div class="sub">기준일 '+STATE.asOf+' · 전체 '+STATE.units.length+'세대</div></div></div>';
+  html+='<div class="kpi-grid">';
+  html+= k.rate===null
+    ? kpiCard("이달 수납률", "기록 없음", "", "월별 납부 현황에서 기록을 시작하세요", "payments")
+    : kpiCard("이달 수납률", k.rate+"%", k.rate>=90?"ok":(k.rate>=75?"warn":"danger"), "이달 납부 확인 기준", "overdue");
+  html+=kpiCard("미납 세대", k.overdueCount+"<small> 세대</small>", k.overdueCount>0?"danger":"ok", won(k.overdueAmt), "overdue");
+  html+=kpiCard("공실률", k.vacancyRate+"%", k.vacancyRate>10?"warn":"ok", "전체 "+STATE.units.length+"세대 중", "units");
+  html+=kpiCard("오늘 납부 예정", k.dueToday+"<small> 세대</small>", "", "납부일 도래", "units");
+  html+=kpiCard("이달 만기 계약", k.expiring+"<small> 건</small>", k.expiring>0?"warn":"", "갱신 검토 필요", "contracts");
+  html+=kpiCard("확인 필요 입금", k.pending+"<small> 건</small>", k.pending>0?"warn":"ok", "입금자명 대사 필요", "home-pending");
+  html+='</div>';
+  html+='<div class="two-col">';
+  html+='<div class="panel"><h3>미납 세대 TOP</h3><div class="table-wrap"><table><thead><tr><th>호실</th><th>임차인</th><th>연체개월</th><th>금액</th><th>연체일수</th></tr></thead><tbody>';
+  if(top.length===0) html+='<tr><td colspan="5" style="color:var(--ink-soft)">미납 세대가 없습니다.</td></tr>';
+  top.forEach(function(u){
+    html+='<tr class="rowlink" onclick="MG.openDetail(\''+u.id+'\')"><td><b>'+u.building+' '+u.id+'호</b></td><td>'+u.tenant+'</td><td>'+u.arrears.months+'개월</td><td class="num">'+won(u.arrears.amount)+'</td><td class="num">'+u.arrears.overdueDays+'일</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  html+='<div class="panel"><h3>확인 필요 입금</h3>';
+  if(STATE.pending.length===0) html+='<div class="hint">확인이 필요한 입금이 없습니다.</div>';
+  STATE.pending.forEach(function(p){
+    html+='<div style="padding:9px 0;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600">'+won(p.amount)+' · '+esc(p.rawName)+'</div><div class="hint">'+p.date+' · '+p.note+'</div></div>';
+  });
+  html+='<h3 style="margin-top:16px">최근 알림 발송 로그</h3>';
+  if(STATE.noticeLog.length===0) html+='<div class="hint">발송 이력이 없습니다.</div>';
+  STATE.noticeLog.slice(0,6).forEach(function(n){
+    html+='<div style="padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px"><b>'+n.unit+'호</b> '+n.tenant+' · '+n.type+' · '+n.channel+' · '+n.date+'</div>';
+  });
+  html+='</div></div>';
+  root().innerHTML=html;
+};
+function kpiCard(lbl,val,tone,sub,goto){
+  return '<div class="kpi '+(tone||"")+'" onclick="MG.nav(\''+goto+'\')"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="delta hint">'+sub+'</div></div>';
+}
+
+VIEWS.units=function(){
+  var html='<div class="view-head"><div><h2>임대·임차인 현황</h2><div class="sub">'+STATE.units.length+'세대 전체 목록</div></div></div>';
+  html+='<div class="panel"><div class="table-wrap"><table><thead><tr><th>동</th><th>호실</th><th>임차인</th><th>상태</th><th>보증금</th><th>월세</th><th>관리비</th><th>납부일</th></tr></thead><tbody>';
+  STATE.units.forEach(function(u){
+    html+='<tr class="rowlink" onclick="MG.openDetail(\''+u.id+'\')"><td>'+u.building+'</td><td><b>'+u.id+'호</b></td><td>'+u.tenant+'</td><td>'+statusBadge(u.status)+'</td>'
+      +'<td class="num">'+won(u.deposit)+'</td><td class="num">'+won(u.rent)+'</td><td class="num">'+won(u.maintenanceFee)+'</td><td class="num">매월 '+u.dueDay+'일</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  root().innerHTML=html;
+};
+
+VIEWS.movein=function(){
+  var occ=STATE.units.filter(function(u){return u.status!=="공실"}).slice().sort(function(a,b){return a.moveInDate<b.moveInDate?-1:1});
+  var html='<div class="view-head"><div><h2>임차인별 최초 입주일</h2><div class="sub">거주 기간이 긴 순서</div></div></div>';
+  html+='<div class="panel"><div class="table-wrap"><table><thead><tr><th>호실</th><th>임차인</th><th>최초 입주일</th><th>거주 개월</th><th>갱신 횟수</th></tr></thead><tbody>';
+  occ.forEach(function(u){
+    var months=Math.floor(dayDiff(u.moveInDate,STATE.asOf)/30);
+    html+='<tr class="rowlink" onclick="MG.openDetail(\''+u.id+'\')"><td><b>'+u.building+' '+u.id+'호</b></td><td>'+u.tenant+'</td><td class="num">'+u.moveInDate+'</td><td class="num">'+months+'개월</td><td class="num">'+u.renewals+'회</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  root().innerHTML=html;
+};
+
+VIEWS.contracts=function(){
+  var occ=STATE.units.filter(function(u){return u.status!=="공실"});
+  var filter=window.__contractFilter||"all";
+  var filtered=occ.filter(function(u){
+    var d=dayDiff(STATE.asOf,u.contractEnd);
+    if(filter==="180") return d<=180;
+    if(filter==="90") return d<=90;
+    if(filter==="60") return d<=60;
+    return true;
+  }).sort(function(a,b){return a.contractEnd<b.contractEnd?-1:1});
+  var html='<div class="view-head"><div><h2>계약서 관리</h2><div class="sub">만기 임박 세대를 우선 확인하세요</div></div></div>';
+  html+='<div class="toolbar">'+["all,전체","180,180일 이내","90,90일 이내","60,60일 이내"].map(function(o){
+    var v=o.split(",")[0], t=o.split(",")[1];
+    return '<button class="chip '+(filter===v?"active":"")+'" onclick="MG.setContractFilter(\''+v+'\')">'+t+'</button>';
+  }).join('')+'</div>';
+  html+='<div class="panel"><div class="table-wrap"><table><thead><tr><th>호실</th><th>임차인</th><th>계약시작</th><th>계약종료</th><th>D-day</th><th>확정일자</th><th>전월세신고</th></tr></thead><tbody>';
+  if(filtered.length===0) html+='<tr><td colspan="7" style="color:var(--ink-soft)">해당 조건의 세대가 없습니다.</td></tr>';
+  filtered.forEach(function(u){
+    var d=dayDiff(STATE.asOf,u.contractEnd);
+    html+='<tr class="rowlink" onclick="MG.openDetail(\''+u.id+'\')"><td><b>'+u.building+' '+u.id+'호</b></td><td>'+u.tenant+'</td><td class="num">'+u.contractStart+'</td><td class="num">'+u.contractEnd+'</td>'
+      +'<td>'+(d<=90?'<span class="badge warn">D-'+d+'</span>':('D-'+d))+'</td><td class="num">'+u.confirmedDate+'</td><td>'+(u.reportStatus==="신고완료"?'<span class="badge ok">신고완료</span>':'<span class="badge danger">미신고</span>')+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  root().innerHTML=html;
+};
+
+VIEWS.payments=function(){
+  var bfilter=window.__buildingFilter||"전체";
+  var list=STATE.units.filter(function(u){return bfilter==="전체"||u.building===bfilter});
+  var months=STATE.units[0].months;
+  var html='<div class="view-head"><div><h2>월별 임대료 납부 현황</h2><div class="sub">최근 12개월 · 셀을 클릭하면 납부 상태를 바로 기록합니다</div></div></div>';
+  html+='<div class="toolbar">'+["전체","A동","B동"].map(function(b){return '<button class="chip '+(bfilter===b?"active":"")+'" onclick="MG.setBuildingFilter(\''+b+'\')">'+b+'</button>'}).join('')
+    +'<span style="margin-left:auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap" class="hint">'
+    +legendDot("var(--ok)","완납")+legendDot("var(--danger)","미납")+legendDot("var(--warn)","부분")+legendDot("var(--line)","예정")+legendDot("var(--line-soft)","미기록")+'</span></div>';
+  html+='<div class="panel"><div class="table-wrap"><div class="heat-grid" style="grid-template-columns:120px repeat('+months.length+',44px)">';
+  html+='<div class="heat-cell heat-head heat-unit">호실</div>';
+  months.forEach(function(m){html+='<div class="heat-cell heat-head">'+m.slice(2)+'</div>'});
+  list.forEach(function(u){
+    html+='<div class="heat-cell heat-unit rowlink" onclick="MG.openDetail(\''+u.id+'\')">'+u.building[0]+' '+u.id+'</div>';
+    months.forEach(function(m){
+      var st=u.payments[m];
+      if(st==="해당없음"){html+='<div class="heat-cell"><span class="dot" style="background:'+colorColor(st)+'"></span></div>';return}
+      html+='<div class="heat-cell" style="cursor:pointer" title="'+m+' · '+st+' (클릭하여 변경)" onclick="MG.cyclePayment(\''+u.id+'\',\''+m+'\')"><span class="dot" style="background:'+colorColor(st)+'"></span></div>';
+    });
+  });
+  html+='</div></div></div>';
+  root().innerHTML=html;
+};
+function colorColor(st){return {"완납":"var(--ok)","미납":"var(--danger)","부분":"var(--warn)","예정":"var(--line)","해당없음":"var(--line-soft)","미기록":"var(--line-soft)"}[st]||"var(--line-soft)"}
+function legendDot(c,l){return '<span><span class="dot" style="background:'+c+';margin-right:4px"></span>'+l+'</span>'}
+
+VIEWS.repairs=function(){
+  var cols=[["접수","접수"],["진행","진행중"],["완료","완료"]];
+  var html='<div class="view-head"><div><h2>수리 현황</h2><div class="sub">접수부터 완료까지 진행 상태를 관리합니다</div></div>'
+    +'<button class="btn gold" onclick="MG.openRepairForm()">+ 새 수리 접수</button></div>';
+  html+='<div class="kanban">';
+  cols.forEach(function(c){
+    var items=STATE.repairs.filter(function(r){return r.status===c[0]});
+    html+='<div class="kcol"><h4>'+c[1]+' <span>'+items.length+'</span></h4>';
+    items.forEach(function(r){
+      html+='<div class="kcard"><div class="u">'+r.building+' '+r.unit+'호 · '+r.tenant+'</div><div class="d">'+r.content+' · '+r.date+'<br>'+r.vendor+' · '+won(r.cost)+'</div>'
+        +(c[0]!=="완료"?'<button class="btn small" onclick="MG.advanceRepair(\''+r.id+'\')">다음 단계로 →</button>':'<span class="badge ok">완료</span>')+'</div>';
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+  root().innerHTML=html;
+};
+
+VIEWS.contacts=function(){
+  var occ=STATE.units.filter(function(u){return u.status!=="공실"});
+  var html='<div class="view-head"><div><h2>임차인 연락처</h2><div class="sub">전화·비상연락·입금자명</div></div></div>';
+  html+='<div class="panel"><div class="table-wrap"><table><thead><tr><th>호실</th><th>이름</th><th>전화</th><th>비상연락</th><th>입금자명</th></tr></thead><tbody>';
+  occ.forEach(function(u){
+    html+='<tr><td class="rowlink" onclick="MG.openDetail(\''+u.id+'\')"><b>'+u.building+' '+u.id+'호</b></td><td>'+u.tenant+'</td>'
+      +'<td class="num"><a href="tel:'+u.phone+'" style="color:var(--gold-600)">'+u.phone+'</a></td><td class="num">'+u.emergency+'</td><td>'+u.depositorAlias+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  root().innerHTML=html;
+};
+
+VIEWS.overdue=function(){
+  var overdue=STATE.units.filter(function(u){return u.arrears.months>0}).sort(function(a,b){return b.arrears.amount-a.arrears.amount});
+  var resolved=STATE.units.filter(function(u){return u.arrears.months===0 && u.status!=="공실" && Object.values(u.payments).some(function(p){return p==="미납"||p==="부분"})});
+  var html='<div class="view-head"><div><h2>임대료 미납 현황</h2><div class="sub">현재 미납 '+overdue.length+'세대 · 과거 미납 이력 '+resolved.length+'세대</div></div></div>';
+  html+='<div class="panel"><h3>현재 미납</h3><div class="table-wrap"><table><thead><tr><th>호실</th><th>임차인</th><th>연체개월</th><th>금액</th><th>연체일수</th><th>비고</th><th></th></tr></thead><tbody>';
+  if(overdue.length===0) html+='<tr><td colspan="7" style="color:var(--ink-soft)">현재 미납 세대가 없습니다.</td></tr>';
+  overdue.forEach(function(u){
+    html+='<tr><td class="rowlink" onclick="MG.openDetail(\''+u.id+'\')"><b>'+u.building+' '+u.id+'호</b></td><td>'+u.tenant+'</td><td class="num">'+u.arrears.months+'개월</td><td class="num">'+won(u.arrears.amount)+'</td><td class="num">'+u.arrears.overdueDays+'일</td>'
+      +'<td>'+(u.arrears.months>=2?'<span class="badge danger">2기 연체</span>':'')+'</td>'
+      +'<td><button class="btn small" id="notice-'+u.id+'" onclick="MG.resend(\''+u.id+'\')">문자 재발송(시뮬레이션)</button></td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  html+='<div class="panel"><h3>과거 미납 이력 (현재는 정상)</h3><div class="table-wrap"><table><thead><tr><th>호실</th><th>임차인</th><th>미납 이력 월</th></tr></thead><tbody>';
+  if(resolved.length===0) html+='<tr><td colspan="3" style="color:var(--ink-soft)">이력이 없습니다.</td></tr>';
+  resolved.forEach(function(u){
+    var bad=Object.keys(u.payments).filter(function(m){return u.payments[m]==="미납"||u.payments[m]==="부분"});
+    html+='<tr class="rowlink" onclick="MG.openDetail(\''+u.id+'\')"><td><b>'+u.building+' '+u.id+'호</b></td><td>'+u.tenant+'</td><td>'+bad.join(", ")+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  root().innerHTML=html;
+};
+
+/* ---------- detail overlay ---------- */
+function openDetail(id){
+  var u=findUnit(id); if(!u) return;
+  var months=u.months;
+  var colorMap={"완납":"var(--ok)","미납":"var(--danger)","부분":"var(--warn)","예정":"var(--line)","해당없음":"var(--line-soft)","미기록":"var(--line-soft)"};
+  var repairs=STATE.repairs.filter(function(r){return r.unit===u.id});
+  var html='<div class="sheet"><div class="sheet-head"><div><h2>'+u.building+' '+u.id+'호</h2><div class="hint">'+u.tenant+' '+statusBadge(u.status)+'</div></div><button class="close-x" onclick="MG.closeOverlay()">✕</button></div>';
+  if(u.status!=="공실"){
+    html+='<div class="field-grid">'
+      +field("보증금",won(u.deposit))+field("월세",won(u.rent))+field("관리비",won(u.maintenanceFee))+field("납부일","매월 "+u.dueDay+"일")
+      +field("최초 입주일",u.moveInDate)+field("갱신 횟수",u.renewals+"회")
+      +field("계약기간",u.contractStart+" ~ "+u.contractEnd)+field("전월세신고",u.reportStatus)
+      +'</div>';
+    html+='<h3 style="margin:16px 0 6px">현재 미납 상태</h3>';
+    html+= u.arrears.months>0 ? ('<div class="badge danger">미납 '+u.arrears.months+'개월 · '+won(u.arrears.amount)+' · 연체 '+u.arrears.overdueDays+'일</div>') : '<div class="badge ok">정상 납부 중</div>';
+    html+='<h3 style="margin:16px 0 6px">12개월 납부 타임라인</h3><div class="timeline">';
+    months.forEach(function(m){html+='<div class="tl-cell" style="background:'+colorMap[u.payments[m]]+'" title="'+m+' '+u.payments[m]+'">'+m.slice(5)+'</div>'});
+    html+='</div>';
+    html+='<h3 style="margin:16px 0 6px">수리 이력</h3>';
+    if(repairs.length===0) html+='<div class="hint">수리 이력이 없습니다.</div>';
+    repairs.forEach(function(r){html+='<div style="padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px">'+r.date+' · '+r.content+' · '+statusBadge(r.status==="완료"?"완납":(r.status==="진행"?"부분":"미납")).replace(/완납|부분|미납/,r.status)+'</div>'});
+    html+='<h3 style="margin:16px 0 6px">연락처</h3>';
+    html+='<div class="field-grid">'+field("전화",'<a href="tel:'+u.phone+'" style="color:var(--gold-600)">'+u.phone+'</a>')+field("비상연락",u.emergency)+field("입금자명",u.depositorAlias)+'</div>';
+  } else {
+    html+='<div class="hint">현재 공실입니다.</div>';
+  }
+  html+='</div>';
+  showOverlay(html,false);
+}
+function field(k,v){return '<div class="f"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'}
+function showOverlay(html,center){
+  var ov=document.getElementById("overlayRoot");
+  ov.innerHTML=html; ov.hidden=false; ov.className="overlay"+(center?" center":"");
+}
+function closeOverlay(){document.getElementById("overlayRoot").hidden=true}
+
+/* ---------- data management overlay ---------- */
+function openDataPanel(){
+  var html='<div class="sheet"><div class="sheet-head"><div><h2>데이터 관리</h2><div class="hint">가상 데이터를 실제 데이터로 교체하거나 초기화합니다</div></div><button class="close-x" onclick="MG.closeOverlay()">✕</button></div>';
+  html+='<div class="panel"><h3>엑셀(CSV)로 실제 데이터 불러오기</h3><div class="hint">채팅으로 전달받은 <b>양식 CSV</b>를 엑셀에서 열어 실제 세대 정보로 채운 뒤, 엑셀에서 "다른 이름으로 저장 → CSV UTF-8(쉼표로 분리)"로 저장해 아래에 올리면 됩니다. 헤더(호실·임차인·전화 등) 순서는 바뀌어도 되고, 열을 더 추가해도 무시되니 기존 엑셀 열 이름만 양식과 맞추면 됩니다. 월별 납부 현황은 불러온 뒤 "월별 납부 현황" 화면에서 칸을 클릭해 표시합니다.</div>'
+    +'<div style="margin-top:12px"><input type="file" id="fileInput" accept=".csv,.json,text/csv,application/json"></div>'
+    +'<div class="hint" style="margin-top:8px">⚠ 엑셀에서 저장할 때 반드시 <b>"CSV UTF-8"</b>을 선택하세요. 일반 "CSV"로 저장하면 한글이 깨질 수 있습니다.</div></div>';
+  html+='<div class="panel"><h3>샘플 데이터로 초기화</h3><div class="hint">지금 입력한 실데이터를 지우고 처음의 가상 데이터로 되돌립니다.</div><button class="btn" style="margin-top:10px" onclick="MG.resetSample()">가상 데이터로 초기화</button></div>';
+  html+='<div class="panel"><h3>고급: 현재 데이터 형식 (JSON)</h3><div class="hint">월별 납부 이력까지 한 번에 넣고 싶다면 JSON 형식도 지원합니다. 아래 내용을 복사해 값을 채운 뒤 같은 업로드 칸에 .json 파일로 올리면 됩니다.</div>'
+    +'<textarea class="jsonview" readonly id="jsonView">'+esc(JSON.stringify(STATE,null,2))+'</textarea>'
+    +'<button class="btn small" style="margin-top:8px" onclick="MG.copyJson()">JSON 복사</button></div>';
+  html+='</div>';
+  showOverlay(html,false);
+  document.getElementById("fileInput").addEventListener("change",handleFile);
+}
+function decodeTextBuffer(buf){
+  try{
+    var u8=new TextDecoder("utf-8",{fatal:true}).decode(buf);
+    return u8;
+  }catch(e){}
+  try{ return new TextDecoder("euc-kr").decode(buf); }catch(e){}
+  return new TextDecoder("utf-8").decode(buf);
+}
+function handleFile(e){
+  var f=e.target.files[0]; if(!f) return;
+  var isCsv=/\.csv$/i.test(f.name) || (f.type||"").indexOf("csv")>=0;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var text=decodeTextBuffer(reader.result);
+      var data;
+      if(isCsv){
+        data=buildUnitsFromCSV(text);
+      } else {
+        data=JSON.parse(text);
+        if(!data || !Array.isArray(data.units)) throw new Error("units 배열이 없습니다");
+        data.isSample=false; data.asOf=data.asOf||todayStr();
+        data.repairs=data.repairs||[]; data.pending=data.pending||[]; data.noticeLog=data.noticeLog||[];
+      }
+      STATE=data; saveState(STATE);
+      closeOverlay(); refreshChrome(); MG.nav("home");
+      toast((isCsv?"CSV":"JSON")+" 데이터를 불러왔습니다 (세대 "+STATE.units.length+"건).");
+    }catch(err){ toast("불러오기 실패: "+err.message); }
+  };
+  reader.readAsArrayBuffer(f);
+}
+function resetSample(){
+  if(!confirm("현재 데이터를 지우고 가상 데이터로 초기화할까요?")) return;
+  STATE=freshSample(); saveState(STATE); closeOverlay(); refreshChrome(); MG.nav("home");
+  toast("가상 데이터로 초기화했습니다.");
+}
+function guardEdit(){
+  if(STATE.readOnly){ toast("실시간 연동 중에는 구글시트에서 직접 수정한 뒤 새로고침 해주세요."); return false; }
+  return true;
+}
+function cyclePayment(unitId,month){
+  if(!guardEdit()) return;
+  var u=findUnit(unitId); if(!u || u.payments[month]==="해당없음") return;
+  var CYCLE=["미기록","완납","부분","미납","예정"];
+  var idx=CYCLE.indexOf(u.payments[month]); if(idx<0) idx=0;
+  u.payments[month]=CYCLE[(idx+1)%CYCLE.length];
+  recomputeArrears(u);
+  saveState(STATE);
+  nav("payments");
+}
+function copyJson(){
+  var ta=document.getElementById("jsonView");
+  navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(STATE,null,2)).then(function(){toast("JSON을 복사했습니다.")});
+}
+function refreshChrome(){
+  document.getElementById("asOfLabel").textContent="기준일 "+STATE.asOf;
+  document.getElementById("dataModePill").textContent= STATE.readOnly ? "실시간 연동" : (STATE.isSample===false ? "실제 데이터" : "가상 데이터");
+  document.getElementById("dataBtn").textContent = STATE.readOnly ? "⚙ 연동 정보 / 새로고침" : "⚙ 데이터 관리 (실데이터 불러오기)";
+}
+var LIVE_API=null, LIVE_TOKEN=null;
+function fetchLive(showToast){
+  if(!LIVE_API) return;
+  fetch(LIVE_API+"?token="+encodeURIComponent(LIVE_TOKEN||""))
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(data && data.error){ toast("연동 오류: "+data.error); return; }
+      if(!data || !Array.isArray(data.units)) throw new Error("형식 오류");
+      data.readOnly=true; STATE=data; saveState(STATE);
+      refreshChrome(); nav(document.querySelector(".nav-item.active")?document.querySelector(".nav-item.active").dataset.view:"home");
+      if(showToast) toast("구글시트에서 최신 데이터를 불러왔습니다.");
+    })
+    .catch(function(err){ toast("연동 실패: "+err.message+" (마지막으로 불러온 데이터를 표시합니다)"); });
+}
+function openDataPanel_live(){
+  var html='<div class="sheet"><div class="sheet-head"><div><h2>실시간 연동 정보</h2><div class="hint">이 대시보드는 Google Sheets(Apps Script)에서 실시간으로 데이터를 읽어옵니다</div></div><button class="close-x" onclick="MG.closeOverlay()">✕</button></div>'
+    +'<div class="panel"><h3>연동 주소</h3><div class="hint" style="word-break:break-all">'+esc(LIVE_API)+'</div></div>'
+    +'<div class="panel"><h3>데이터 수정</h3><div class="hint">세대·계약·연락처 정보는 Google Sheets의 "세대" 시트에서, 수리 접수는 "수리" 시트에서 직접 수정하세요. 은행 입금 대사는 시트 상단 메뉴 "미건 관리 → 은행 입금 대사 실행"으로 처리합니다. 수정 후 아래 새로고침을 누르면 반영됩니다.</div>'
+    +'<button class="btn gold" style="margin-top:10px" onclick="MG.refreshLive()">🔄 새로고침</button></div>'
+    +'</div>';
+  showOverlay(html,false);
+}
+
+/* ---------- interactions ---------- */
+function openRepairForm(){
+  if(!guardEdit()) return;
+  var occ=STATE.units.filter(function(u){return u.status!=="공실"});
+  var opts=occ.map(function(u){return '<option value="'+u.id+'">'+u.building+' '+u.id+'호 · '+u.tenant+'</option>'}).join('');
+  var html='<div class="sheet"><div class="sheet-head"><div><h2>새 수리 접수</h2></div><button class="close-x" onclick="MG.closeOverlay()">✕</button></div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +'<label class="hint">호실<select id="rf-unit" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);margin-top:4px">'+opts+'</select></label>'
+    +'<label class="hint">내용<input id="rf-content" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);margin-top:4px" placeholder="예: 보일러 작동 불량"></label>'
+    +'<label class="hint">업체<input id="rf-vendor" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);margin-top:4px" placeholder="예: 미건설비"></label>'
+    +'<label class="hint">예상 비용(원)<input id="rf-cost" type="number" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);margin-top:4px" placeholder="0"></label>'
+    +'<button class="btn gold" style="margin-top:6px" onclick="MG.submitRepair()">접수 등록</button></div></div>';
+  showOverlay(html,true);
+}
+function submitRepair(){
+  if(!guardEdit()) return;
+  var unitId=document.getElementById("rf-unit").value;
+  var u=findUnit(unitId);
+  var content=document.getElementById("rf-content").value.trim()||"수리 요청";
+  var vendor=document.getElementById("rf-vendor").value.trim()||"미배정";
+  var cost=parseInt(document.getElementById("rf-cost").value,10)||0;
+  STATE.repairs.unshift({id:"R"+Date.now(), unit:u.id, building:u.building, tenant:u.tenant, date:STATE.asOf, content:content, status:"접수", cost:cost, vendor:vendor});
+  saveState(STATE); closeOverlay(); nav("repairs"); toast("수리 접수를 등록했습니다.");
+}
+function advanceRepair(id){
+  if(!guardEdit()) return;
+  var r=STATE.repairs.find(function(x){return x.id===id}); if(!r) return;
+  r.status = r.status==="접수" ? "진행" : "완료";
+  saveState(STATE); nav("repairs");
+}
+function resend(unitId){
+  if(!guardEdit()) return;
+  var btn=document.getElementById("notice-"+unitId);
+  var u=findUnit(unitId);
+  STATE.noticeLog.unshift({date:STATE.asOf, unit:u.id, tenant:u.tenant, type:"미납 안내(재발송)", channel:"SMS(시뮬레이션)"});
+  saveState(STATE);
+  if(btn){btn.textContent="발송됨 ✓"; btn.disabled=true;}
+  toast("문자 발송을 시뮬레이션했습니다. 실제 문자는 전송되지 않았습니다.");
+}
+function setContractFilter(v){window.__contractFilter=v; nav("contracts")}
+function setBuildingFilter(v){window.__buildingFilter=v; nav("payments")}
+
+/* ---------- search ---------- */
+function doSearch(q){
+  var box=document.getElementById("searchResults");
+  q=q.trim();
+  if(!q){box.hidden=true; return}
+  var qLower=q.replace("호","");
+  var matches=STATE.units.filter(function(u){
+    return u.id.indexOf(qLower)===0 || (u.tenant && u.tenant.indexOf(q)>=0);
+  }).slice(0,8);
+  if(matches.length===0){box.innerHTML='<div style="color:var(--ink-soft)">검색 결과가 없습니다</div>'; box.hidden=false; return}
+  box.innerHTML=matches.map(function(u){return '<div onclick="MG.pickSearch(\''+u.id+'\')"><b>'+u.building+' '+u.id+'호</b> · '+u.tenant+' '+(u.arrears.months>0?'<span class="badge danger" style="margin-left:6px">미납</span>':'')+'</div>'}).join('');
+  box.hidden=false;
+}
+function pickSearch(id){
+  document.getElementById("searchResults").hidden=true;
+  document.getElementById("searchInput").value="";
+  openDetail(id);
+}
+
+/* ---------- nav / toast ---------- */
+function nav(view){
+  if(view==="home-pending"){ nav("home"); return; }
+  document.querySelectorAll(".nav-item").forEach(function(b){b.classList.toggle("active", b.dataset.view===view)});
+  (VIEWS[view]||VIEWS.home)();
+  document.getElementById("sidebar").classList.remove("open");
+  window.scrollTo(0,0);
+}
+var toastTimer=null;
+function toast(msg){
+  var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove("show")},2600);
+}
+
+/* ---------- boot ---------- */
+document.addEventListener("click",function(e){
+  if(!e.target.closest(".search-wrap")) document.getElementById("searchResults").hidden=true;
+});
+document.getElementById("searchInput").addEventListener("input",function(e){doSearch(e.target.value)});
+document.getElementById("nav").addEventListener("click",function(e){
+  var b=e.target.closest(".nav-item"); if(b) nav(b.dataset.view);
+});
+document.getElementById("dataBtn").addEventListener("click",function(){ STATE.readOnly ? openDataPanel_live() : openDataPanel(); });
+document.getElementById("menuToggle").addEventListener("click",function(){document.getElementById("sidebar").classList.toggle("open")});
+
+var overlayDiv=document.createElement("div");
+overlayDiv.id="overlayRoot"; overlayDiv.className="overlay"; overlayDiv.hidden=true;
+document.body.appendChild(overlayDiv);
+overlayDiv.addEventListener("click",function(e){if(e.target===overlayDiv) closeOverlay()});
+
+window.MG={nav:nav, openDetail:openDetail, closeOverlay:closeOverlay, resend:resend, advanceRepair:advanceRepair,
+  openRepairForm:openRepairForm, submitRepair:submitRepair, setContractFilter:setContractFilter, setBuildingFilter:setBuildingFilter,
+  resetSample:resetSample, copyJson:copyJson, pickSearch:pickSearch, cyclePayment:cyclePayment, refreshLive:function(){fetchLive(true)}};
+
+var qs=new URLSearchParams(location.search);
+LIVE_API=qs.get("api"); LIVE_TOKEN=qs.get("token");
+refreshChrome();
+nav("home");
+if(LIVE_API) fetchLive(false);
+})();
+</script>
