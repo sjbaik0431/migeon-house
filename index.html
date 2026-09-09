@@ -77,6 +77,25 @@ button{font-family:inherit;cursor:pointer}
 .kpi .delta{font-size:11.5px}
 .kpi.warn .val{color:var(--warn)} .kpi.danger .val{color:var(--danger)} .kpi.ok .val{color:var(--ok)}
 .gauge{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--font-display);flex:none}
+.kpi.ring-card{align-items:center;text-align:center}
+.ring-wrap{position:relative;width:68px;height:68px;margin:2px auto}
+.ring-wrap svg{width:100%;height:100%}
+.ring-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:15px}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-svg text{fill:var(--ink-soft);font-family:var(--font-body)}
+.bar-grow{transform-box:fill-box;transform-origin:bottom;transform:scaleY(0)}
+.two-col-charts{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+@media(max-width:980px){.two-col-charts{grid-template-columns:1fr}}
+.donut-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.donut-wrap{position:relative;width:118px;height:118px;flex:none}
+.donut-wrap svg{width:100%;height:100%;opacity:0;transform:scale(.82)}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-center .n{font-family:var(--font-display);font-weight:700;font-size:20px}
+.donut-center .t{font-size:10.5px;color:var(--ink-soft)}
+.legend-list{display:flex;flex-direction:column;gap:8px;flex:1;min-width:120px}
+.legend-row{display:flex;align-items:center;gap:8px;font-size:13px}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex:none}
+@media (prefers-reduced-motion: reduce){ .bar-grow,.ring-wrap circle,.donut-wrap svg{transition:none!important} }
 .panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
 .panel h3{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
 .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
@@ -151,6 +170,8 @@ textarea.jsonview{width:100%;height:180px;font-family:ui-monospace,Menlo,monospa
       <button class="nav-item" data-view="repairs"><span class="ic">✎</span>수리 현황</button>
       <button class="nav-item" data-view="contacts"><span class="ic">☎</span>임차인 연락처</button>
       <button class="nav-item" data-view="overdue"><span class="ic">!</span>임대료 미납 현황</button>
+      <button class="nav-item" data-view="finance"><span class="ic">₩</span>경영지표</button>
+      <button class="nav-item" data-view="guide"><span class="ic">?</span>활용 가이드</button>
     </nav>
     <div class="sidebar-foot">
       <button class="ghost-btn" id="dataBtn">⚙ 데이터 관리 (실데이터 불러오기)</button>
@@ -426,19 +447,139 @@ var VIEWS={};
 function root(){return document.getElementById("viewRoot")}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 
+var REDUCE_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function ringColor(rate){ return rate>=90?"var(--ok)":(rate>=75?"var(--warn)":"var(--danger)"); }
+function svgRingGauge(rate, color){
+  var size=68, r=26, c=2*Math.PI*r;
+  var pct=Math.max(0,Math.min(100,rate||0));
+  var offset = c - (pct/100)*c;
+  return '<svg viewBox="0 0 '+size+' '+size+'" class="ring-gauge">'
+    +'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="var(--line)" stroke-width="7"/>'
+    +'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+c.toFixed(2)+'" stroke-dashoffset="'+c.toFixed(2)+'" data-ring-target="'+offset.toFixed(2)+'" transform="rotate(-90 '+size/2+' '+size/2+')"></circle>'
+    +'</svg>';
+}
+function monthlyRates(){
+  var months = STATE.units[0] ? STATE.units[0].months : [];
+  return months.map(function(m){
+    var due=0, paid=0;
+    STATE.units.forEach(function(u){
+      var st=u.payments[m];
+      if(st==="완납"||st==="미납"||st==="부분"){ due++; if(st==="완납") paid++; }
+    });
+    return {month:m, rate: due? Math.round(paid/due*100) : null};
+  });
+}
+function buildRateBarChart(){
+  var data=monthlyRates();
+  var W=560,H=170,plotH=118,padL=30,padR=8,gap=8;
+  var n=data.length, barW=(W-padL-padR-gap*(n+1))/n;
+  var svg='<svg viewBox="0 0 '+W+' '+(H)+'" class="chart-svg">';
+  [0,50,100].forEach(function(g){
+    var y=plotH-(g/100)*plotH;
+    svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="var(--line-soft)" stroke-width="1"/>';
+    svg+='<text x="0" y="'+(y+3)+'" font-size="9.5">'+g+'%</text>';
+  });
+  data.forEach(function(d,i){
+    var x=padL+gap+i*(barW+gap);
+    var h = d.rate===null ? 3 : Math.max(3,(d.rate/100)*plotH);
+    var y = plotH-h;
+    var color = d.rate===null ? "var(--line-soft)" : ringColor(d.rate);
+    svg+='<rect class="bar-grow" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="3" fill="'+color+'"><title>'+d.month+' · '+(d.rate===null?"기록없음":d.rate+"%")+'</title></rect>';
+    svg+='<text x="'+(x+barW/2).toFixed(1)+'" y="'+(plotH+16)+'" font-size="10" text-anchor="middle">'+d.month.slice(5)+'</text>';
+  });
+  svg+='</svg>';
+  return svg;
+}
+function buildStatusDonut(){
+  var counts={"입주":0,"공실":0,"퇴거예정":0};
+  STATE.units.forEach(function(u){ counts[u.status]=(counts[u.status]||0)+1; });
+  var total=STATE.units.length||1;
+  var colors={"입주":"var(--ok)","공실":"var(--line)","퇴거예정":"var(--warn)"};
+  var r=48,c=2*Math.PI*r,cum=0;
+  var svg='<svg viewBox="0 0 118 118">';
+  ["입주","퇴거예정","공실"].forEach(function(key){
+    var cnt=counts[key]||0; if(!cnt) return;
+    var len=(cnt/total)*c;
+    svg+='<circle cx="59" cy="59" r="'+r+'" fill="none" stroke="'+colors[key]+'" stroke-width="16" stroke-dasharray="'+len.toFixed(2)+' '+(c-len).toFixed(2)+'" stroke-dashoffset="'+(-cum).toFixed(2)+'" transform="rotate(-90 59 59)"><title>'+key+' '+cnt+'세대</title></circle>';
+    cum+=len;
+  });
+  svg+='</svg>';
+  var legend='<div class="legend-list">'+["입주","공실","퇴거예정"].map(function(key){
+    return '<div class="legend-row"><span class="legend-dot" style="background:'+colors[key]+'"></span>'+key+' <b class="num" style="margin-left:auto">'+(counts[key]||0)+'세대</b></div>';
+  }).join('')+'</div>';
+  return {svg:svg, legend:legend, total:total};
+}
+function countUp(el,target,suf,duration){
+  if(REDUCE_MOTION || !duration){ el.textContent=Math.round(target)+suf; return; }
+  var start=null;
+  function tick(ts){
+    if(start===null) start=ts;
+    var p=Math.min(1,(ts-start)/duration);
+    var eased=1-Math.pow(1-p,3);
+    el.textContent=Math.round(target*eased)+suf;
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+function countUpMoney(el,target,duration){
+  if(REDUCE_MOTION || !duration){ el.textContent=Math.round(target).toLocaleString("ko-KR")+"원"; return; }
+  var start=null;
+  function tick(ts){
+    if(start===null) start=ts;
+    var p=Math.min(1,(ts-start)/duration);
+    var eased=1-Math.pow(1-p,3);
+    el.textContent=Math.round(target*eased).toLocaleString("ko-KR")+"원";
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+function kpiCardMoney(lbl,target,tone,sub,goto){
+  var val='<span class="cu-money" data-cu="'+target+'">0원</span>';
+  return '<div class="kpi '+(tone||"")+'" onclick="MG.nav(\''+goto+'\')"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="delta hint">'+sub+'</div></div>';
+}
+function runEntryAnimations(){
+  document.querySelectorAll(".cu").forEach(function(el){
+    countUp(el, parseFloat(el.getAttribute("data-cu"))||0, el.getAttribute("data-suf")||"", REDUCE_MOTION?0:800);
+  });
+  document.querySelectorAll(".cu-money").forEach(function(el){
+    countUpMoney(el, parseFloat(el.getAttribute("data-cu"))||0, REDUCE_MOTION?0:800);
+  });
+  var ring=document.querySelector(".ring-gauge circle[data-ring-target]");
+  if(ring){
+    var off=parseFloat(ring.getAttribute("data-ring-target"));
+    if(REDUCE_MOTION){ ring.style.strokeDashoffset=off; }
+    else requestAnimationFrame(function(){ requestAnimationFrame(function(){ ring.style.transition="stroke-dashoffset .9s cubic-bezier(.22,.9,.35,1)"; ring.style.strokeDashoffset=off; }); });
+  }
+  document.querySelectorAll(".bar-grow").forEach(function(el,i){
+    if(REDUCE_MOTION){ el.style.transform="scaleY(1)"; return; }
+    setTimeout(function(){ el.style.transition="transform .6s cubic-bezier(.22,.9,.35,1)"; el.style.transform="scaleY(1)"; }, 60+i*35);
+  });
+  var donutSvg=document.querySelector(".donut-wrap svg");
+  if(donutSvg){
+    if(REDUCE_MOTION){ donutSvg.style.opacity=1; donutSvg.style.transform="scale(1)"; }
+    else requestAnimationFrame(function(){ donutSvg.style.transition="opacity .5s ease, transform .5s cubic-bezier(.22,.9,.35,1)"; donutSvg.style.opacity=1; donutSvg.style.transform="scale(1)"; });
+  }
+}
 VIEWS.home=function(){
   var k=computeKPI();
   var top=STATE.units.filter(function(u){return u.arrears.months>0}).sort(function(a,b){return b.arrears.amount-a.arrears.amount}).slice(0,6);
   var html='<div class="view-head"><div><h2>현황판</h2><div class="sub">기준일 '+STATE.asOf+' · 전체 '+STATE.units.length+'세대</div></div></div>';
   html+='<div class="kpi-grid">';
-  html+= k.rate===null
-    ? kpiCard("이달 수납률", "기록 없음", "", "월별 납부 현황에서 기록을 시작하세요", "payments")
-    : kpiCard("이달 수납률", k.rate+"%", k.rate>=90?"ok":(k.rate>=75?"warn":"danger"), "이달 납부 확인 기준", "overdue");
-  html+=kpiCard("미납 세대", k.overdueCount+"<small> 세대</small>", k.overdueCount>0?"danger":"ok", won(k.overdueAmt), "overdue");
-  html+=kpiCard("공실률", k.vacancyRate+"%", k.vacancyRate>10?"warn":"ok", "전체 "+STATE.units.length+"세대 중", "units");
-  html+=kpiCard("오늘 납부 예정", k.dueToday+"<small> 세대</small>", "", "납부일 도래", "units");
-  html+=kpiCard("이달 만기 계약", k.expiring+"<small> 건</small>", k.expiring>0?"warn":"", "갱신 검토 필요", "contracts");
-  html+=kpiCard("확인 필요 입금", k.pending+"<small> 건</small>", k.pending>0?"warn":"ok", "입금자명 대사 필요", "home-pending");
+  if(k.rate===null){
+    html+='<div class="kpi ring-card" onclick="MG.nav(\'payments\')"><div class="lbl">이달 수납률</div><div class="ring-wrap">'+svgRingGauge(0,"var(--line)")+'<div class="ring-center hint" style="font-size:11px">기록없음</div></div><div class="delta hint">월별 납부 현황에서 기록을 시작하세요</div></div>';
+  } else {
+    html+='<div class="kpi ring-card" onclick="MG.nav(\'overdue\')"><div class="lbl">이달 수납률</div><div class="ring-wrap">'+svgRingGauge(k.rate,ringColor(k.rate))+'<div class="ring-center"><span class="cu" data-cu="'+k.rate+'" data-suf="%">0%</span></div></div><div class="delta hint">이달 납부 확인 기준</div></div>';
+  }
+  html+=kpiCard("미납 세대", k.overdueCount, "세대", k.overdueCount>0?"danger":"ok", won(k.overdueAmt), "overdue");
+  html+=kpiCard("공실률", k.vacancyRate, "%", k.vacancyRate>10?"warn":"ok", "전체 "+STATE.units.length+"세대 중", "units");
+  html+=kpiCard("오늘 납부 예정", k.dueToday, "세대", "", "납부일 도래", "units");
+  html+=kpiCard("이달 만기 계약", k.expiring, "건", k.expiring>0?"warn":"", "갱신 검토 필요", "contracts");
+  html+=kpiCard("확인 필요 입금", k.pending, "건", k.pending>0?"warn":"ok", "입금자명 대사 필요", "home-pending");
+  html+='</div>';
+  var donut=buildStatusDonut();
+  html+='<div class="two-col-charts">';
+  html+='<div class="panel"><h3>월별 수납률 추이</h3>'+buildRateBarChart()+'</div>';
+  html+='<div class="panel"><h3>세대 현황 분포</h3><div class="donut-row"><div class="donut-wrap">'+donut.svg+'<div class="donut-center"><span class="n">'+donut.total+'</span><span class="t">전체 세대</span></div></div>'+donut.legend+'</div></div>';
   html+='</div>';
   html+='<div class="two-col">';
   html+='<div class="panel"><h3>미납 세대 TOP</h3><div class="table-wrap"><table><thead><tr><th>호실</th><th>임차인</th><th>연체개월</th><th>금액</th><th>연체일수</th></tr></thead><tbody>';
@@ -459,8 +600,91 @@ VIEWS.home=function(){
   });
   html+='</div></div>';
   root().innerHTML=html;
+  runEntryAnimations();
 };
-function kpiCard(lbl,val,tone,sub,goto){
+function monthlyFinance(){
+  var months = STATE.units[0] ? STATE.units[0].months : [];
+  return months.map(function(m){
+    var billed=0, collected=0;
+    STATE.units.forEach(function(u){
+      var st=u.payments[m]; if(st==="해당없음") return;
+      var amt=(u.rent||0)+(u.maintenanceFee||0);
+      billed+=amt;
+      if(st==="완납") collected+=amt;
+      else if(st==="부분") collected+=Math.round(amt*0.6);
+    });
+    var cost = STATE.repairs.filter(function(r){ return r.date && r.date.slice(0,7)===m; }).reduce(function(a,r){return a+(r.cost||0)},0);
+    var net = collected-cost;
+    var margin = collected? Math.round(net/collected*100) : null;
+    return {month:m, billed:billed, collected:collected, cost:cost, net:net, margin:margin};
+  });
+}
+function buildFinanceChart(){
+  var data=monthlyFinance();
+  var maxVal=Math.max.apply(null, data.map(function(d){return Math.max(d.collected,d.cost)}).concat([1]));
+  var W=560,H=180,plotH=124,padL=40,padR=8,gap=10;
+  var n=data.length, groupW=(W-padL-padR-gap*(n+1))/n, barW=(groupW-4)/2;
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" class="chart-svg">';
+  [0,0.5,1].forEach(function(f){
+    var y=plotH-f*plotH;
+    svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="var(--line-soft)" stroke-width="1"/>';
+    svg+='<text x="0" y="'+(y+3)+'" font-size="9">'+Math.round(f*maxVal/10000)+'만</text>';
+  });
+  data.forEach(function(d,i){
+    var gx=padL+gap+i*(groupW+gap);
+    var hCollected=Math.max(2,(d.collected/maxVal)*plotH);
+    var hCost=Math.max(2,(d.cost/maxVal)*plotH);
+    svg+='<rect class="bar-grow" x="'+gx.toFixed(1)+'" y="'+(plotH-hCollected).toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+hCollected.toFixed(1)+'" rx="2" fill="var(--gold-500)"><title>'+d.month+' 매출 '+won(d.collected)+'</title></rect>';
+    svg+='<rect class="bar-grow" x="'+(gx+barW+2).toFixed(1)+'" y="'+(plotH-hCost).toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+hCost.toFixed(1)+'" rx="2" fill="var(--danger)"><title>'+d.month+' 비용 '+won(d.cost)+'</title></rect>';
+    svg+='<text x="'+(gx+groupW/2-2).toFixed(1)+'" y="'+(plotH+16)+'" font-size="10" text-anchor="middle">'+d.month.slice(5)+'</text>';
+  });
+  svg+='</svg>';
+  return svg;
+}
+VIEWS.finance=function(){
+  var data=monthlyFinance();
+  var cur=data[data.length-1];
+  var totalCollected=data.reduce(function(a,d){return a+d.collected},0);
+  var totalCost=data.reduce(function(a,d){return a+d.cost},0);
+  var totalNet=totalCollected-totalCost;
+  var html='<div class="view-head"><div><h2>경영지표</h2><div class="sub">최근 12개월 매출·비용·수익 현황 · 비용은 현재 수리비만 반영 (세금·대출이자 등 미포함)</div></div></div>';
+  html+='<div class="kpi-grid">';
+  html+=kpiCardMoney("이달 매출", cur.collected, "", "청구 대비 수납 기준", "payments");
+  html+=kpiCardMoney("이달 비용", cur.cost, cur.cost>0?"warn":"", "수리비 합계", "repairs");
+  html+=kpiCardMoney("이달 순이익", cur.net, cur.net<0?"danger":"ok", cur.margin===null?"수납 기록 없음":"수익률 "+cur.margin+"%", "finance");
+  html+=kpiCardMoney("12개월 누적 매출", totalCollected, "", "최근 1년 합계", "payments");
+  html+=kpiCardMoney("12개월 누적 순이익", totalNet, totalNet<0?"danger":"ok", "매출 − 비용", "finance");
+  html+='</div>';
+  html+='<div class="panel"><h3>월별 매출·비용 추이</h3>'
+    +'<div class="hint" style="margin-bottom:8px">'+legendDot("var(--gold-500)","매출(수납액)")+' &nbsp; '+legendDot("var(--danger)","비용(수리비)")+'</div>'
+    +buildFinanceChart()+'</div>';
+  html+='<div class="panel"><h3>월별 상세</h3><div class="table-wrap"><table><thead><tr><th>월</th><th>청구액</th><th>매출(수납)</th><th>비용</th><th>순이익</th><th>수익률</th></tr></thead><tbody>';
+  data.slice().reverse().forEach(function(d){
+    html+='<tr><td>'+d.month+'</td><td class="num">'+won(d.billed)+'</td><td class="num">'+won(d.collected)+'</td><td class="num">'+won(d.cost)+'</td><td class="num" style="color:'+(d.net<0?"var(--danger)":"var(--ink)")+'">'+won(d.net)+'</td><td class="num">'+(d.margin===null?"-":d.margin+"%")+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  root().innerHTML=html;
+  runEntryAnimations();
+};
+function guideItem(title,desc){
+  return '<div style="padding:10px 0;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;margin-bottom:3px">'+title+'</div><div class="hint">'+desc+'</div></div>';
+}
+VIEWS.guide=function(){
+  var html='<div class="view-head"><div><h2>활용 가이드</h2><div class="sub">각 화면을 이럴 때 쓰세요</div></div></div>';
+  html+='<div class="panel">'
+    +guideItem("홈","오늘 아침 가장 먼저 보는 화면. 수납률·미납·공실·확인필요 입금을 한눈에 확인합니다.")
+    +guideItem("임대·임차인 현황","전체 세대의 보증금·월세·관리비·납부일을 조회합니다.")
+    +guideItem("월별 납부 현황","세대별 12개월 납부 상태를 표로 보고, 칸을 클릭해 완납/미납 등을 기록합니다. (실시간 연동 중에는 구글시트에서 수정)")
+    +guideItem("경영지표","매출·비용·순이익·수익률을 월별로 확인합니다. 비용은 현재 수리비만 반영되어 있습니다.")
+    +guideItem("수리 현황","접수 → 진행 → 완료 단계를 관리합니다.")
+    +guideItem("임대료 미납 현황","현재 미납 세대와 과거 미납 이력을 확인하고 문자 재발송을 시도합니다.")
+    +guideItem("데이터 관리(⚙)","구글시트 실시간 연동을 연결하거나, 엑셀(CSV)로 실제 데이터를 불러옵니다.")
+    +'</div>';
+  html+='<div class="panel"><h3>실운영 자동화로 넘어가려면</h3><div class="hint">Google Sheets + Apps Script로 매월 청구·미납 문자·대표 보고까지 자동화하는 방법은 배포 패키지의 "사람이_직접_할_일.md" 문서를 참고하세요.</div></div>';
+  root().innerHTML=html;
+};
+function kpiCard(lbl,target,suf,tone,sub,goto){
+  var val='<span class="cu" data-cu="'+target+'" data-suf="'+esc(suf||"")+'">0'+esc(suf||"")+'</span>';
   return '<div class="kpi '+(tone||"")+'" onclick="MG.nav(\''+goto+'\')"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="delta hint">'+sub+'</div></div>';
 }
 
@@ -629,7 +853,11 @@ function closeOverlay(){document.getElementById("overlayRoot").hidden=true}
 /* ---------- data management overlay ---------- */
 function openDataPanel(){
   var html='<div class="sheet"><div class="sheet-head"><div><h2>데이터 관리</h2><div class="hint">가상 데이터를 실제 데이터로 교체하거나 초기화합니다</div></div><button class="close-x" onclick="MG.closeOverlay()">✕</button></div>';
-  html+='<div class="panel"><h3>엑셀(CSV)로 실제 데이터 불러오기</h3><div class="hint">채팅으로 전달받은 <b>양식 CSV</b>를 엑셀에서 열어 실제 세대 정보로 채운 뒤, 엑셀에서 "다른 이름으로 저장 → CSV UTF-8(쉼표로 분리)"로 저장해 아래에 올리면 됩니다. 헤더(호실·임차인·전화 등) 순서는 바뀌어도 되고, 열을 더 추가해도 무시되니 기존 엑셀 열 이름만 양식과 맞추면 됩니다. 월별 납부 현황은 불러온 뒤 "월별 납부 현황" 화면에서 칸을 클릭해 표시합니다.</div>'
+  html+='<div class="panel"><h3>🔗 구글시트 실시간 연동</h3><div class="hint">Google Sheets + Apps Script를 배포한 뒤 나온 <b>웹 앱 URL</b>과 <b>WEBAPP_TOKEN</b> 값을 아래에 붙여넣으면, 이후로는 이 화면을 열 때마다 시트 데이터를 자동으로 불러옵니다.</div>'
+    +'<input id="live-api-input" placeholder="https://script.google.com/macros/s/…/exec" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--line);margin-top:10px;background:var(--paper-raised);color:var(--ink)">'
+    +'<input id="live-token-input" placeholder="WEBAPP_TOKEN 값" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--line);margin-top:8px;background:var(--paper-raised);color:var(--ink)">'
+    +'<button class="btn gold" style="margin-top:10px" onclick="MG.connectLive()">연결하기</button></div>';
+  html+='<div class="panel"><h3>엑셀(CSV)로 실제 데이터 불러오기</h3><div class="hint">구글시트 연동 전 임시로 조회만 하고 싶을 때 씁니다. 채팅으로 전달받은 <b>양식 CSV</b>를 엑셀에서 열어 실제 세대 정보로 채운 뒤, 엑셀에서 "다른 이름으로 저장 → CSV UTF-8(쉼표로 분리)"로 저장해 아래에 올리면 됩니다. 헤더(호실·임차인·전화 등) 순서는 바뀌어도 되고, 열을 더 추가해도 무시되니 기존 엑셀 열 이름만 양식과 맞추면 됩니다. 월별 납부 현황은 불러온 뒤 "월별 납부 현황" 화면에서 칸을 클릭해 표시합니다.</div>'
     +'<div style="margin-top:12px"><input type="file" id="fileInput" accept=".csv,.json,text/csv,application/json"></div>'
     +'<div class="hint" style="margin-top:8px">⚠ 엑셀에서 저장할 때 반드시 <b>"CSV UTF-8"</b>을 선택하세요. 일반 "CSV"로 저장하면 한글이 깨질 수 있습니다.</div></div>';
   html+='<div class="panel"><h3>샘플 데이터로 초기화</h3><div class="hint">지금 입력한 실데이터를 지우고 처음의 가상 데이터로 되돌립니다.</div><button class="btn" style="margin-top:10px" onclick="MG.resetSample()">가상 데이터로 초기화</button></div>';
@@ -699,6 +927,7 @@ function refreshChrome(){
   document.getElementById("dataModePill").textContent= STATE.readOnly ? "실시간 연동" : (STATE.isSample===false ? "실제 데이터" : "가상 데이터");
   document.getElementById("dataBtn").textContent = STATE.readOnly ? "⚙ 연동 정보 / 새로고침" : "⚙ 데이터 관리 (실데이터 불러오기)";
 }
+var LIVE_API_KEY="migeon_live_api", LIVE_TOKEN_KEY="migeon_live_token";
 var LIVE_API=null, LIVE_TOKEN=null;
 function fetchLive(showToast){
   if(!LIVE_API) return;
@@ -713,11 +942,28 @@ function fetchLive(showToast){
     })
     .catch(function(err){ toast("연동 실패: "+err.message+" (마지막으로 불러온 데이터를 표시합니다)"); });
 }
+function connectLive(){
+  var api=document.getElementById("live-api-input").value.trim();
+  var token=document.getElementById("live-token-input").value.trim();
+  if(!api){ toast("웹 앱 URL을 입력해주세요."); return; }
+  try{ localStorage.setItem(LIVE_API_KEY, api); localStorage.setItem(LIVE_TOKEN_KEY, token); }catch(e){}
+  LIVE_API=api; LIVE_TOKEN=token;
+  closeOverlay();
+  fetchLive(true);
+}
+function disconnectLive(){
+  if(!confirm("실시간 연동을 해제하고 가상 데이터로 돌아갈까요?")) return;
+  try{ localStorage.removeItem(LIVE_API_KEY); localStorage.removeItem(LIVE_TOKEN_KEY); }catch(e){}
+  LIVE_API=null; LIVE_TOKEN=null;
+  STATE=freshSample(); saveState(STATE); closeOverlay(); refreshChrome(); nav("home");
+  toast("연동을 해제했습니다.");
+}
 function openDataPanel_live(){
   var html='<div class="sheet"><div class="sheet-head"><div><h2>실시간 연동 정보</h2><div class="hint">이 대시보드는 Google Sheets(Apps Script)에서 실시간으로 데이터를 읽어옵니다</div></div><button class="close-x" onclick="MG.closeOverlay()">✕</button></div>'
     +'<div class="panel"><h3>연동 주소</h3><div class="hint" style="word-break:break-all">'+esc(LIVE_API)+'</div></div>'
     +'<div class="panel"><h3>데이터 수정</h3><div class="hint">세대·계약·연락처 정보는 Google Sheets의 "세대" 시트에서, 수리 접수는 "수리" 시트에서 직접 수정하세요. 은행 입금 대사는 시트 상단 메뉴 "미건 관리 → 은행 입금 대사 실행"으로 처리합니다. 수정 후 아래 새로고침을 누르면 반영됩니다.</div>'
     +'<button class="btn gold" style="margin-top:10px" onclick="MG.refreshLive()">🔄 새로고침</button></div>'
+    +'<div class="panel"><h3>연동 해제</h3><div class="hint">가상 데이터 데모 화면으로 돌아갑니다.</div><button class="btn" style="margin-top:10px" onclick="MG.disconnectLive()">연동 해제</button></div>'
     +'</div>';
   showOverlay(html,false);
 }
@@ -815,10 +1061,16 @@ overlayDiv.addEventListener("click",function(e){if(e.target===overlayDiv) closeO
 
 window.MG={nav:nav, openDetail:openDetail, closeOverlay:closeOverlay, resend:resend, advanceRepair:advanceRepair,
   openRepairForm:openRepairForm, submitRepair:submitRepair, setContractFilter:setContractFilter, setBuildingFilter:setBuildingFilter,
-  resetSample:resetSample, copyJson:copyJson, pickSearch:pickSearch, cyclePayment:cyclePayment, refreshLive:function(){fetchLive(true)}};
+  resetSample:resetSample, copyJson:copyJson, pickSearch:pickSearch, cyclePayment:cyclePayment, refreshLive:function(){fetchLive(true)},
+  connectLive:connectLive, disconnectLive:disconnectLive};
 
 var qs=new URLSearchParams(location.search);
-LIVE_API=qs.get("api"); LIVE_TOKEN=qs.get("token");
+var qsApi=qs.get("api"), qsToken=qs.get("token");
+try{
+  LIVE_API = qsApi || localStorage.getItem(LIVE_API_KEY);
+  LIVE_TOKEN = qsToken || localStorage.getItem(LIVE_TOKEN_KEY);
+  if(qsApi){ localStorage.setItem(LIVE_API_KEY, qsApi); localStorage.setItem(LIVE_TOKEN_KEY, qsToken||""); }
+}catch(e){ LIVE_API=qsApi; LIVE_TOKEN=qsToken; }
 refreshChrome();
 nav("home");
 if(LIVE_API) fetchLive(false);
